@@ -4,8 +4,8 @@ import { CartItem } from '../types';
 
 interface OrderSummaryProps {
   items: CartItem[];
-  onUpdateQuantity: (productId: string, quantity: number) => void;
-  onRemoveItem: (productId: string) => void;
+  onUpdateQuantity: (productId: number, quantity: number) => void;
+  onRemoveItem: (productId: number) => void;
   primaryColor: string;
 }
 

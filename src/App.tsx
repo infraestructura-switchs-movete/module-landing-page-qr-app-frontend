@@ -1,70 +1,104 @@
-import React, { useState, useEffect } from 'react';
-import { Header } from './components/Header';
-import { ProductCard } from './components/ProductCard';
-import { Cart } from './components/Cart';
-import { OrderSummary } from './components/OrderSummary';
-import { AdminPanel } from './components/AdminPanel';
-import { useLocalStorage } from './hooks/useLocalStorage';
-import { RestaurantConfig, Category } from './types';
-import { getProductsByCompany } from './Api/productsApi';
-import { ProductType, CartItem } from './types/productsType';
-
+import React, { useState, useEffect } from "react";
+import { Header } from "./components/Header";
+import { ProductCard } from "./components/ProductCard";
+import { Cart } from "./components/Cart";
+//import { OrderSummary } from "./components/OrderSummary";
+import { AdminPanel } from "./components/AdminPanel";
+import { useLocalStorage } from "./hooks/useLocalStorage";
+import {  Category } from "./types";
+import { getProductsByCompany } from "./Api/productsApi";
+import { ProductType, CartItem, ProductsResponse } from "./types/productsType";
+import { CompanyType } from "./types/companyType";
+import { useCompany } from "./hooks/useCompany";
 
 function App() {
+  const [allProducts, setAllProducts] = useState<ProductsResponse>(); // Mantén ProductType[] en el estado
   const [products, setProducts] = useState<ProductType[]>([]); // Mantén ProductType[] en el estado
   const [categories, setCategories] = useState<Category[]>([]);
-  const [activeCategory, setActiveCategory] = useState<string>('all');
-  const [cartItems, setCartItems] = useLocalStorage<CartItem[]>('restaurant-cart', []);
-  const [config, setConfig] = useLocalStorage<RestaurantConfig>('restaurant-config', {
-    name: 'GMA',
-    logo: null,
-    primaryColor: '#475569',
-    whatsappNumber: ''
-  });
-  
+  const [activeCategory, setActiveCategory] = useState<string>("all");
+  const [cartItems, setCartItems] = useLocalStorage<CartItem[]>(
+    "restaurant-cart",
+    []
+  );
+const { company } = useCompany();
+const [config, setConfig] = useLocalStorage<CompanyType>(
+  "restaurant-config",
+  {
+    companyId: 1,
+    nameCompany: "GMA",
+    logoUrl: null,
+    primaryColor: "#475569",
+    numberWhatsapp: 123456789,
+    longitude: "",
+    latitude: "",
+    baseValue: 100,
+    additionalValue: 50,
+  }
+);
+
+useEffect(() => {
+  if (company) {
+    setConfig({
+      ...company,
+      primaryColor: "#475569"
+    });
+  }
+}, []);
+
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
 
-
-  const cartItemsCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const cartItemsCount = cartItems.reduce(
+    (sum, item) => sum + item.quantity,
+    0
+  );
 
   const addToCart = (product: ProductType) => {
-  setCartItems(prev => {
-    const existingItem = prev.find(item => item.product.productId === product.productId);
-    if (existingItem) {
-      return prev.map(item =>
-        item.product.productId === product.productId
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
+    setCartItems((prev) => {
+      const existingItem = prev.find(
+        (item) => item.product.productId === product.productId
       );
-    } else {
-      return [...prev, { product, quantity: 1 }];
-    }
-  });
-};
+      if (existingItem) {
+        return prev.map((item) =>
+          item.product.productId === product.productId
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
+      } else {
+        return [...prev, { product, quantity: 1 }];
+      }
+    });
+  };
 
-
-  const updateQuantity = (productId: number , quantity: number) => {
+  const updateQuantity = (productId: string, quantity: number) => {
     if (quantity <= 0) {
       removeFromCart(productId);
     } else {
-      setCartItems(prev =>
-        prev.map(item =>
-          item.product.productId === productId
-            ? { ...item, quantity }
-            : item
+      setCartItems((prev) =>
+        prev.map((item) =>
+          item.product.productId === productId ? { ...item, quantity } : item
         )
       );
     }
   };
 
-  const removeFromCart = (productId: number) => {
-    setCartItems(prev => prev.filter(item => item.product.productId !== productId));
+  const removeFromCart = (productId: string) => {
+    setCartItems((prev) =>
+      prev.filter((item) => item.product.productId !== productId)
+    );
   };
 
   const clearCart = () => {
     setCartItems([]);
   };
+
+  const categoryOptions = [
+    { value: "all", label: "Todos" },
+    { value: "bebidas", label: "Bebidas" },
+    { value: "comidasRapidas", label: "Comidas rápidas" },
+    { value: "asados", label: "Asados" },
+    { value: "adiciones", label: "Adiciones" },
+  ];
 
   /*const addProduct = (productData: Omit<Product, 'id'>) => {
     const newProduct: Product = {
@@ -83,89 +117,106 @@ function App() {
   };
   */
 
-  const deleteProduct = (productId: number) => {
-    setProducts(prev => prev.filter(product => product.productId !== productId));
-    // Remove from cart if exists
-    setCartItems(prev => prev.filter(item => item.product.productId !== productId));
+  const deleteProduct = (productId: string) => {
+    setProducts((prev) =>
+      prev.filter((product) => product.productId !== productId)
+    );
+
+    setCartItems((prev) =>
+      prev.filter((item) => item.product.productId !== productId)
+    );
   };
 
-  const addCategory = (categoryData: Omit<Category, 'id'>) => {
+  const addCategory = (categoryData: Omit<Category, "id">) => {
     const newCategory: Category = {
       ...categoryData,
-      id: Date.now().toString()
+      id: Date.now().toString(),
     };
-    setCategories(prev => [...prev, newCategory]);
+    setCategories((prev) => [...prev, newCategory]);
   };
 
-  const editCategory = (id: string, categoryData: Omit<Category, 'id'>) => {
-    const oldCategory = categories.find(cat => cat.id === id);
+  const editCategory = (id: string, categoryData: Omit<Category, "id">) => {
+    const oldCategory = categories.find((cat) => cat.id === id);
     if (oldCategory) {
-      // Update products that use this category
-      setProducts(prev =>
-        prev.map(product =>
+      setProducts((prev) =>
+        prev.map((product) =>
           product.category === oldCategory.name
             ? { ...product, category: categoryData.name }
             : product
         )
       );
     }
-    
-    setCategories(prev =>
-      prev.map(category =>
+
+    setCategories((prev) =>
+      prev.map((category) =>
         category.id === id ? { ...categoryData, id } : category
       )
     );
   };
 
   const deleteCategory = (id: string) => {
-    const categoryToDelete = categories.find(cat => cat.id === id);
+    const categoryToDelete = categories.find((cat) => cat.id === id);
     if (categoryToDelete) {
-      // Remove products that use this category
-      setProducts(prev => prev.filter(product => product.category !== categoryToDelete.name));
+      setProducts((prev) =>
+        prev.filter((product) => product.category !== categoryToDelete.name)
+      );
       // Remove from cart if exists
-      setCartItems(prev => prev.filter(item => item.product.category !== categoryToDelete.name));
+      setCartItems((prev) =>
+        prev.filter((item) => item.product.category !== categoryToDelete.name)
+      );
     }
-    
-    setCategories(prev => prev.filter(category => category.id !== id));
-    
-    // Reset active category if it was deleted
+
+    setCategories((prev) => prev.filter((category) => category.id !== id));
+
     if (activeCategory === categoryToDelete?.name) {
-      setActiveCategory('all');
+      setActiveCategory("all");
     }
   };
 
-  // Fetch productos cuando el componente se monte
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        // Obtén los productos desde la API
-        const productData: ProductType[] = await getProductsByCompany();
-        
-        // Convierte los productos de tipo ProductType a ProductType (manteniendo la estructura completa)
-        const formattedProducts: ProductType[] = productData.map((product) => ({
-          productId: product.productId,    // Asegúrate de mantener todas las propiedades de ProductType
-          arqProductId: product.arqProductId, // Asegúrate de mantener estas propiedades
-          name: product.name,
-          price: product.price,
-          categoryId: product.categoryId, // Asegúrate de mantener estas propiedades
-          category: product.category,
-          quantity: product.quantity, // Asegúrate de mantener estas propiedades
-        }));
+        const productsData: ProductsResponse = await getProductsByCompany();
 
-        // Actualiza el estado con los productos formateados
-        setProducts(formattedProducts);
+        setAllProducts(productsData);
+
+        // Combinamos todos los productos en un solo array para allProducts
+        const allProductsArray = Object.values(productsData).flat();
+
+        // Por defecto mostramos todos los productos
+        setProducts(allProductsArray);
       } catch (error) {
-        console.error('Error fetching products:', error);
+        console.error("Error fetching products:", error);
       }
     };
 
     fetchProducts();
-  }, []); // Solo se ejecuta una vez al montar el componente
+  }, []);
 
-  // Filtrar productos según la categoría seleccionada
-  const filteredProducts = products.filter((product) =>
-    activeCategory === 'all' || product.category === activeCategory
-  );
+  const filterProducts = (category: string) => {
+    if (!allProducts) {
+      // Si allProducts es undefined, no hacemos nada o inicializamos con array vacío
+      setProducts([]);
+      return;
+    }
+
+    if (category === "all") {
+      // Combinar todos los productos de todas las categorías
+      const allProductsArray = Object.values(allProducts).flat();
+      setProducts(allProductsArray);
+    } else {
+      // category podría ser 'bebidas', 'asados', etc.
+      const categoryKey = category as keyof ProductsResponse;
+
+      if (allProducts[categoryKey]) {
+        // Mostrar solo los productos de esa categoría
+        setProducts([...allProducts[categoryKey]]);
+      } else {
+        // Si la categoría no existe, mostrar vacío
+        setProducts([]);
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -176,7 +227,6 @@ function App() {
         onAdminToggle={() => setIsAdminOpen(!isAdminOpen)}
         isCartOpen={isCartOpen}
         isAdminOpen={isAdminOpen}
-        
       />
       <Cart
         isOpen={isCartOpen}
@@ -189,30 +239,44 @@ function App() {
         onRemoveItem={removeFromCart}
       />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex justify-start mb-8">
-          <div className="bg-white rounded-lg p-1 shadow-sm">
-            <button
-              onClick={() => setActiveCategory('all')}
-              className={`px-6 py-2 rounded-md font-medium transition-colors ${activeCategory === 'all' ? 'text-white' : 'text-gray-600 hover:text-gray-900'}`}
-              style={{ backgroundColor: activeCategory === 'all' ? config.primaryColor : 'transparent' }}
-            >
-              Todos
-            </button>
-            {categories.map((category) => (
-              <button
-                key={category.id}
-                onClick={() => setActiveCategory(category.name)}
-                className={`px-6 py-2 rounded-md font-medium transition-colors ${activeCategory === category.name ? 'text-white' : 'text-gray-600 hover:text-gray-900'}`}
-                style={{ backgroundColor: activeCategory === category.name ? config.primaryColor : 'transparent' }}
+        {/* Contenedor sticky para las categorías */}
+        <div className="sticky top-16 z-40 bg-white py-2 mb-6">
+          {" "}
+          {/* top-16 debe ser la altura de tu header */}
+          <div className="flex justify-start">
+            <div className="bg-white rounded-lg p-1 shadow-sm w-full max-w-xs">
+              <select
+                value={activeCategory}
+                onChange={(e) => {
+                  setActiveCategory(e.target.value);
+                  filterProducts(e.target.value);
+                }}
+                className={`px-6 py-2 rounded-md font-medium focus:outline-none appearance-none w-full text-white`}
+                style={{
+                  backgroundImage: `url("data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='white' viewBox='0 0 24 24' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "right 1rem center",
+                  backgroundSize: "1em",
+                  paddingRight: "2.5rem",
+                  backgroundColor: config.primaryColor,
+                }}
               >
-                {category.displayName}
-              </button>
-            ))}
+                {categoryOptions.map((category) => (
+                  <option
+                    key={category.value}
+                    value={category.value}
+                    className="px-4 py-2"
+                  >
+                    {category.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {filteredProducts.map((product) => (
+
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {products.map((product) => (
             <ProductCard
               key={product.productId}
               product={product}
@@ -221,18 +285,15 @@ function App() {
             />
           ))}
         </div>
-        
-       
-      
       </main>
-      
+
       <AdminPanel
         isOpen={isAdminOpen}
         onClose={() => setIsAdminOpen(false)}
         products={products}
         categories={categories}
         //onAddProduct={addProduct}
-       // onEditProduct={editProduct}
+        // onEditProduct={editProduct}
         //onDeleteProduct={deleteProduct}
         onAddCategory={addCategory}
         onEditCategory={editCategory}

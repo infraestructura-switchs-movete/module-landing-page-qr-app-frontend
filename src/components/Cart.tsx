@@ -1,13 +1,14 @@
-import React, { useCallback } from 'react';
-import { X, Plus, Minus, Trash2 } from 'lucide-react';
-import { CartItem } from '../types/productsType';
+import React, { useCallback } from "react";
+import { X, Plus, Minus, Trash2 } from "lucide-react";
+import { CartItem } from "../types/productsType";
+import { useDecryptPhone } from "../hooks/useDecrypt";
 
 interface CartProps {
   isOpen: boolean;
   onClose: () => void;
   items: CartItem[];
-  onUpdateQuantity: (productId: number, quantity: number) => void;
-  onRemoveItem: (productId: number) => void;
+  onUpdateQuantity: (productId: string, quantity: number) => void;
+  onRemoveItem: (productId: string) => void;
   onClearCart: () => void;
 }
 
@@ -17,13 +18,13 @@ export const Cart: React.FC<CartProps> = ({
   items,
   onUpdateQuantity,
   onRemoveItem,
-  onClearCart
+  onClearCart,
 }) => {
   const formatPrice = (price: number) =>
-    new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
-      minimumFractionDigits: 0
+    new Intl.NumberFormat("es-CO", {
+      style: "currency",
+      currency: "COP",
+      minimumFractionDigits: 0,
     }).format(price);
 
   const total = items.reduce(
@@ -31,44 +32,60 @@ export const Cart: React.FC<CartProps> = ({
     0
   );
 
-  const phoneParam =
-    window.location.search ||
-    window.location.hash.split('?')[1] ||
-    '';
+  const tokenParam =
+    window.location.search || window.location.hash.split("?")[1] || "";
 
-  const phone = new URLSearchParams(phoneParam).get('phone') ?? '';
+  const token = new URLSearchParams(tokenParam).get("token") ?? "";
+
+  // Usar el hook para desencriptar el teléfono
+  const {
+    decryptedPhone: phone,
+    loading: phoneLoading,
+    error: phoneError,
+  } = useDecryptPhone(token);
 
   const handleSendOrder = useCallback(async () => {
+    if (phoneLoading) {
+      alert("Procesando información... Por favor espera un momento");
+      return;
+    }
+
+    if (phoneError) {
+      alert("Error al procesar tu información de contacto 🤔");
+      return;
+    }
+
     if (!phone) {
-      alert('No se encontró tu número de WhatsApp 🤔');
+      alert("No se encontró tu número de WhatsApp 🤔");
       return;
     }
 
     const orderItems = items.map((i) => ({
+      productId: i.product.productId.toString(),
       name: i.product.name,
       qty: i.quantity,
-      price: i.product.price
+      price: i.product.price,
     }));
 
     try {
-      await fetch('http://localhost:4000/order-complete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      await fetch("http://localhost:4000/order-complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           phone,
           items: orderItems,
-          total
-        })
+          total,
+        }),
       });
 
-      alert('¡Pedido enviado a WhatsApp!');
+      alert("¡Pedido enviado a WhatsApp!");
       onClearCart();
       onClose();
     } catch (err) {
       console.error(err);
-      alert('No se pudo enviar el pedido. Intenta de nuevo.');
+      alert("No se pudo enviar el pedido. Intenta de nuevo.");
     }
-  }, [items, phone, total, onClearCart, onClose]);
+  }, [items, phone, phoneLoading, phoneError, total, onClearCart, onClose]);
 
   if (!isOpen) return null;
 
@@ -147,9 +164,7 @@ export const Cart: React.FC<CartProps> = ({
                         </button>
 
                         <button
-                          onClick={() =>
-                            onRemoveItem(item.product.productId)
-                          }
+                          onClick={() => onRemoveItem(item.product.productId)}
                           className="p-1 hover:bg-red-100 text-red-600 rounded ml-auto"
                         >
                           <Trash2 className="h-3 w-3" />
@@ -166,9 +181,7 @@ export const Cart: React.FC<CartProps> = ({
             <div className="border-t p-4">
               <div className="flex justify-between items-center mb-4">
                 <span className="font-semibold">Total:</span>
-                <span className="text-xl font-bold">
-                  {formatPrice(total)}
-                </span>
+                <span className="text-xl font-bold">{formatPrice(total)}</span>
               </div>
 
               <button
@@ -180,9 +193,20 @@ export const Cart: React.FC<CartProps> = ({
 
               <button
                 onClick={handleSendOrder}
-                className="w-full bg-slate-700 text-white py-3 rounded-lg hover:bg-slate-800 transition-colors flex items-center justify-center space-x-2"
+                disabled={phoneLoading || phoneError !== null}
+                className={`w-full py-3 rounded-lg transition-colors flex items-center justify-center space-x-2 ${
+                  phoneLoading || phoneError
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-slate-700 hover:bg-slate-800"
+                } text-white`}
               >
-                <span>✓ Enviar Pedido</span>
+                {phoneLoading ? (
+                  <span>🔄 Procesando...</span>
+                ) : phoneError ? (
+                  <span>❌ Error de conexión</span>
+                ) : (
+                  <span>✓ Enviar Pedido</span>
+                )}
               </button>
             </div>
           )}

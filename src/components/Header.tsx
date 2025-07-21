@@ -1,9 +1,9 @@
-import React from 'react';
-import { ShoppingCart, Settings, Menu, X } from 'lucide-react';
-import { RestaurantConfig } from '../types';
+import React from "react";
+import { ShoppingCart, Settings, Menu, X } from "lucide-react";
+import { CompanyType } from "../types/companyType";
 
 interface HeaderProps {
-  config: RestaurantConfig;
+  config: CompanyType;
   cartItemsCount: number;
   onCartToggle: () => void;
   onAdminToggle: () => void;
@@ -17,33 +17,44 @@ export const Header: React.FC<HeaderProps> = ({
   onCartToggle,
   onAdminToggle,
   isCartOpen,
-  isAdminOpen
+  isAdminOpen,
 }) => {
+  console.log("Config in Header:", config);
   return (
-    <header 
-      className="text-white shadow-lg"
+    <header
+      className="sticky top-0 z-50 text-white shadow-lg"
       style={{ backgroundColor: config.primaryColor }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-4">
-            {config.logo ? (
-              <img src={config.logo} alt={config.name} className="h-8 w-8 object-contain" />
+            {config.logoUrl ? (
+              <img
+                src={config.logoUrl}
+                alt={config.nameCompany}
+                className="h-8 w-8 object-contain"
+              />
             ) : (
               <div className="h-8 w-8 bg-white bg-opacity-20 rounded flex items-center justify-center">
-                <span className="text-sm font-bold">{config.name.charAt(0)}</span>
+                <span className="text-sm font-bold"></span>
               </div>
             )}
-            <h1 className="text-xl font-bold">{config.name}</h1>
+            <h1 className="text-xl font-bold">{config.nameCompany}</h1>
           </div>
-          
+
           <nav className="hidden md:flex items-center space-x-8 flex-1 ml-12">
-            <a href="#" className="hover:text-gray-300 transition-colors">INICIO</a>
-            <a href="#" className="hover:text-gray-300 transition-colors">MENÚ</a>
-            <a href="#" className="hover:text-gray-300 transition-colors">CONTÁCTANOS</a>
+            <a href="#" className="hover:text-gray-300 transition-colors">
+              INICIO
+            </a>
+            <a href="#" className="hover:text-gray-300 transition-colors">
+              MENÚ
+            </a>
+            <a href="#" className="hover:text-gray-300 transition-colors">
+              CONTÁCTANOS
+            </a>
           </nav>
-          
-         <div className="flex items-center space-x-4">
+
+          <div className="flex items-center space-x-4">
             <button
               onClick={onCartToggle}
               className="relative p-2 hover:bg-white hover:bg-opacity-10 rounded-lg transition-colors"
@@ -55,16 +66,17 @@ export const Header: React.FC<HeaderProps> = ({
                 </span>
               )}
             </button>
-            
-            {/* 
-  <button
-    onClick={onAdminToggle}
-    className="p-2 hover:bg-white hover:bg-opacity-10 rounded-lg transition-colors"
-  >
-    <Settings className="h-5 w-5" />
-  </button>
-*/}
 
+            <button
+              onClick={onAdminToggle}
+              className={`p-2 rounded-lg transition-colors ${
+                isAdminOpen
+                  ? "bg-white bg-opacity-20"
+                  : "hover:bg-white hover:bg-opacity-10"
+              }`}
+            >
+              <Settings className="h-5 w-5" />
+            </button>
           </div>
         </div>
       </div>

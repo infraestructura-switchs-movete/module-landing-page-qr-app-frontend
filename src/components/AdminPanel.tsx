@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
-import { X, Plus, Edit, Trash2, Upload } from 'lucide-react';
-import { Product, RestaurantConfig, Category } from '../types';
-import { ProductType } from '../types/productsType';
+import React, { useState, useEffect } from "react";
+import { X, Plus, Edit, Trash2, Upload, MapPin } from "lucide-react";
+import { Product, Category } from "../types";
+import { createCompany, deleteCompany, getCompany } from "../Api/companyAPI";
+import { CompanyType } from "../types/companyType";
+import { ProductType } from "../types/productsType";
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -11,13 +13,13 @@ interface AdminPanelProps {
   //onAddProduct: (product: Omit<Product, 'id'>) => void;
   //onEditProduct: (id: string, product: Omit<Product, 'id'>) => void;
   //onDeleteProduct: (id: string) => void;
-  onAddCategory: (category: Omit<Category, 'id'>) => void;
-  onEditCategory: (id: string, category: Omit<Category, 'id'>) => void;
+  onAddCategory: (category: Omit<Category, "id">) => void;
+  onEditCategory: (id: string, category: Omit<Category, "id">) => void;
   onDeleteCategory: (id: string) => void;
-  config: RestaurantConfig;
-  onUpdateConfig: (config: RestaurantConfig) => void;
+  config: CompanyType;
+  onUpdateConfig: (config: CompanyType) => void;
 }
- 
+
 export const AdminPanel: React.FC<AdminPanelProps> = ({
   isOpen,
   onClose,
@@ -30,44 +32,183 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   onEditCategory,
   onDeleteCategory,
   config,
-  onUpdateConfig
+  onUpdateConfig,
 }) => {
-  const [activeTab, setActiveTab] = useState<'products' | 'categories' | 'config'>('products');
+  const [nameCompany, setNameCompany] = useState("");
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [numberWhatsapp, setNumberWhatsapp] = useState("");
+  const [longitude, setLongitude] = useState("");
+  const [latitude, setLatitude] = useState("");
+  const [baseValue, setBaseValue] = useState<number>(0);
+  const [additionalValue, setAdditionalValue] = useState<number>(0);
+  const [logo, setLogo] = useState<File | null>(null);
+  const [activeTab, setActiveTab] = useState<
+    "products" | "categories" | "config"
+  >("config");
   const [showProductForm, setShowProductForm] = useState(false);
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [configData, setConfigData] = useState<CompanyType | null>(null);
   const [productForm, setProductForm] = useState({
-    name: '',
-    description: '',
+    name: "",
+    description: "",
     price: 0,
-    category: categories[0]?.name || 'food',
-    image: ''
+    category: categories[0]?.name || "food",
+    image: "",
   });
   const [categoryForm, setCategoryForm] = useState({
-    name: '',
-    displayName: ''
+    name: "",
+    displayName: "",
   });
 
+  useEffect(() => {
+    const fetchCompanyData = async () => {
+      const company = await getCompany();
+      if (company) {
+        setConfigData(company);
+        setNameCompany(company.nameCompany);
+        setNumberWhatsapp(company.numberWhatsapp);
+        setLongitude(company.longitude);
+        setLatitude(company.latitude);
+        setBaseValue(company.baseValue);
+        setAdditionalValue(company.additionalValue);
+      }
+    };
+
+    if (isOpen) {
+      fetchCompanyData();
+    }
+  }, [isOpen]);
+
+  const handleDeleteConfig = async () => {
+    if (configData && configData.companyId) {
+      const confirmation = window.confirm(
+        "¿Estás seguro de que deseas eliminar esta configuración? Esta acción no se puede deshacer."
+      );
+      if (confirmation) {
+        try {
+          await deleteCompany(configData.companyId);
+          alert("Configuración eliminada correctamente.");
+
+         
+          onUpdateConfig({
+            companyId: 0,
+            nameCompany: "",
+            logoUrl: null,
+            primaryColor: "#475569",
+            numberWhatsapp: 0,
+            longitude: "",
+            latitude: "",
+            baseValue: 100,
+            additionalValue: 50,
+          });
+
+         
+          setConfigData(null);
+          setNameCompany(""); 
+          setNumberWhatsapp(""); 
+          setLongitude(""); 
+          setLatitude(""); 
+          setBaseValue(0); 
+          setAdditionalValue(0); 
+          setLogo(null); 
+        } catch (error) {
+          console.error("Error al eliminar la configuración:", error);
+          alert("Hubo un error al eliminar la configuración.");
+        }
+      }
+    }
+  };
+
+  if (!isOpen) return null;
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
-      minimumFractionDigits: 0
+    return new Intl.NumberFormat("es-CO", {
+      style: "currency",
+      currency: "COP",
+      minimumFractionDigits: 0,
     }).format(price);
   };
 
-  /*const handleProductSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editingProduct) {
-      onEditProduct(editingProduct.id, productForm);
-      setEditingProduct(null);
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setLogo(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const imageUrl = reader.result as string;
+        onUpdateConfig({ ...config, logoUrl: imageUrl });
+      };
+      reader.readAsDataURL(file);
     } else {
-      onAddProduct(productForm);
+      console.log("No se ha seleccionado ningún archivo.");
     }
-    setProductForm({ name: '', description: '', price: 0, category: categories[0]?.name || 'food', image: '' });
-    setShowProductForm(false);
-  };*/
+  };
+
+  const handleSaveConfig = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const whatsappNumber = numberWhatsapp.replace(/\D/g, "");
+    if (!whatsappNumber) {
+      alert("Por favor, ingresa un número de WhatsApp válido.");
+      return;
+    }
+
+    const formData = new FormData();
+
+    if (logo) {
+      formData.append("logo", logo);
+    } else {
+      alert("Por favor, agrega un logo.");
+      return;
+    }
+
+    formData.append("nameCompany", nameCompany);
+    formData.append("numberWhatsapp", whatsappNumber);
+    formData.append("longitude", longitude);
+    formData.append("latitude", latitude);
+    formData.append("baseValue", String(baseValue));
+    formData.append("additionalValue", String(additionalValue));
+
+    try {
+      await createCompany(formData);
+      console.log("Configuración guardada correctamente");
+    } catch (error) {
+      console.error("Error al guardar la configuración:", error);
+    }
+  };
+
+  const getLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude.toString();
+          const long = position.coords.longitude.toString();
+          setLatitude(lat);
+          setLongitude(long);
+          onUpdateConfig({ ...config, latitude: lat, longitude: long });
+        },
+        (error) => {
+          console.error("Error al obtener la ubicación:", error);
+          alert("No se pudo obtener la ubicación.");
+        }
+      );
+    } else {
+      alert("La geolocalización no es compatible con este navegador.");
+    }
+  };
+
+  /*const handleProductSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      if (editingProduct) {
+        onEditProduct(editingProduct.id, productForm);
+        setEditingProduct(null);
+      } else {
+        onAddProduct(productForm);
+      }
+      setProductForm({ name: '', description: '', price: 0, category: categories[0]?.name || 'food', image: '' });
+      setShowProductForm(false);
+    };*/
 
   const handleCategorySubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,7 +218,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     } else {
       onAddCategory(categoryForm);
     }
-    setCategoryForm({ name: '', displayName: '' });
+    setCategoryForm({ name: "", displayName: "" });
     setShowCategoryForm(false);
   };
 
@@ -88,7 +229,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       description: product.description,
       price: product.price,
       category: product.category,
-      image: product.image
+      image: product.image,
     });
     setShowProductForm(true);
   };
@@ -97,21 +238,24 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     setEditingCategory(category);
     setCategoryForm({
       name: category.name,
-      displayName: category.displayName
+      displayName: category.displayName,
     });
     setShowCategoryForm(true);
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'product' | 'logo') => {
+  const handleImageUpload = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    type: "product" | "logo"
+  ) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = (event) => {
         const result = event.target?.result as string;
-        if (type === 'product') {
-          setProductForm(prev => ({ ...prev, image: result }));
+        if (type === "product") {
+          setProductForm((prev) => ({ ...prev, image: result }));
         } else {
-          onUpdateConfig({ ...config, logo: result });
+          onUpdateConfig({ ...config, logoUrl: result });
         }
       };
       reader.readAsDataURL(file);
@@ -119,16 +263,24 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   };
 
   const colorOptions = [
-    '#ef4444', '#10b981', '#8b5cf6', '#f97316', 
-    '#3b82f6', '#ec4899', '#475569'
+    "#ef4444",
+    "#10b981",
+    "#8b5cf6",
+    "#f97316",
+    "#3b82f6",
+    "#ec4899",
+    "#475569",
   ];
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
-      <div className="absolute inset-0 bg-black bg-opacity-50" onClick={onClose} />
-      
+      <div
+        className="absolute inset-0 bg-black bg-opacity-50"
+        onClick={onClose}
+      />
+
       <div className="absolute inset-4 bg-white rounded-lg shadow-xl flex flex-col">
         <div className="flex items-center justify-between p-4 border-b">
           <h2 className="text-xl font-semibold">Panel de Administración</h2>
@@ -139,174 +291,215 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <X className="h-5 w-5" />
           </button>
         </div>
-        
+
         <div className="flex border-b">
+          {/* 
+<button
+  onClick={() => setActiveTab('products')}
+  className={`px-6 py-3 font-medium ${
+    activeTab === 'products' 
+      ? 'border-b-2 border-slate-700 text-slate-700' 
+      : 'text-gray-500 hover:text-gray-700'
+  }`}
+>
+  Gestión de Productos
+</button>
+<button
+  onClick={() => setActiveTab('categories')}
+  className={`px-6 py-3 font-medium ${
+    activeTab === 'categories' 
+      ? 'border-b-2 border-slate-700 text-slate-700' 
+      : 'text-gray-500 hover:text-gray-700'
+  }`}
+>
+  Gestión de Categorías
+</button>
+*/}
           <button
-            onClick={() => setActiveTab('products')}
+            onClick={() => setActiveTab("config")}
             className={`px-6 py-3 font-medium ${
-              activeTab === 'products' 
-                ? 'border-b-2 border-slate-700 text-slate-700' 
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Gestión de Productos
-          </button>
-          <button
-            onClick={() => setActiveTab('categories')}
-            className={`px-6 py-3 font-medium ${
-              activeTab === 'categories' 
-                ? 'border-b-2 border-slate-700 text-slate-700' 
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Gestión de Categorías
-          </button>
-          <button
-            onClick={() => setActiveTab('config')}
-            className={`px-6 py-3 font-medium ${
-              activeTab === 'config' 
-                ? 'border-b-2 border-slate-700 text-slate-700' 
-                : 'text-gray-500 hover:text-gray-700'
+              activeTab === "config"
+                ? "border-b-2 border-slate-700 text-slate-700"
+                : "text-gray-500 hover:text-gray-700"
             }`}
           >
             Configuración
           </button>
         </div>
-        
+
         <div className="flex-1 overflow-y-auto p-6">
-          {activeTab === 'products' && (
+          {activeTab === "products" && (
             <div>
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-semibold">Productos</h3>
-                <button
-                  onClick={() => setShowProductForm(true)}
-                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>Agregar Producto</span>
-                </button>
-              </div>
-              
+              {/* 
+  <div className="flex justify-between items-center mb-6">
+    <h3 className="text-lg font-semibold">Productos</h3>
+    <button
+      onClick={() => setShowProductForm(true)}
+      className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
+    >
+      <Plus className="h-4 w-4" />
+      <span>Agregar Producto</span>
+    </button>
+  </div>
+*/}
+
               {showProductForm && (
                 <div className="bg-gray-50 p-6 rounded-lg mb-6">
                   <h4 className="text-lg font-semibold mb-4">
-                    {editingProduct ? 'Editar Producto' : 'Nuevo Producto'}
+                    {editingProduct ? "Editar Producto" : "Nuevo Producto"}
                   </h4>
-                  
-                 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Nombre del Producto
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={productForm.name}
-                          onChange={(e) => setProductForm(prev => ({ ...prev, name: e.target.value }))}
-                          className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent"
-                          placeholder="Ej: Hamburguesa Clásica"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Precio (COP)
-                        </label>
-                        <input
-                          type="number"
-                          required
-                          value={productForm.price}
-                          onChange={(e) => setProductForm(prev => ({ ...prev, price: Number(e.target.value) }))}
-                          className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent"
-                        />
-                      </div>
-                    </div>
-                    
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Categoría
-                      </label>
-                      <select
-                        value={productForm.category}
-                        onChange={(e) => setProductForm(prev => ({ ...prev, category: e.target.value }))}
-                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent"
-                      >
-                        {categories.map((category) => (
-                          <option key={category.id} value={category.name}>
-                            {category.displayName}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Imagen
+                        Nombre del Producto
                       </label>
                       <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => handleImageUpload(e, 'product')}
+                        type="text"
+                        required
+                        value={productForm.name}
+                        onChange={(e) =>
+                          setProductForm((prev) => ({
+                            ...prev,
+                            name: e.target.value,
+                          }))
+                        }
                         className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                        placeholder="Ej: Hamburguesa Clásica"
                       />
-                      {productForm.image && (
-                        <img src={productForm.image} alt="Preview" className="mt-2 w-20 h-20 object-cover rounded" />
-                      )}
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Descripción
+                        Precio (COP)
                       </label>
-                      <textarea
-                        value={productForm.description}
-                        onChange={(e) => setProductForm(prev => ({ ...prev, description: e.target.value }))}
-                        rows={3}
+                      <input
+                        type="number"
+                        required
+                        value={productForm.price}
+                        onChange={(e) =>
+                          setProductForm((prev) => ({
+                            ...prev,
+                            price: Number(e.target.value),
+                          }))
+                        }
                         className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent"
-                        placeholder="Describe tu producto..."
                       />
                     </div>
-                    
-                    <div className="flex space-x-2">
-                      <button
-                        type="submit"
-                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
-                      >
-                        {editingProduct ? 'Actualizar Producto' : 'Guardar Producto'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowProductForm(false);
-                          setEditingProduct(null);
-                          setProductForm({ name: '', description: '', price: 0, category: categories[0]?.name || 'food', image: '' });
-                        }}
-                        className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
-                      >
-                        Cancelar
-                      </button>
-                    </div>
-                
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Categoría
+                    </label>
+                    <select
+                      value={productForm.category}
+                      onChange={(e) =>
+                        setProductForm((prev) => ({
+                          ...prev,
+                          category: e.target.value,
+                        }))
+                      }
+                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                    >
+                      {categories.map((category) => (
+                        <option key={category.id} value={category.name}>
+                          {category.displayName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Imagen
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleImageUpload(e, "product")}
+                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                    />
+                    {productForm.image && (
+                      <img
+                        src={productForm.image}
+                        alt="Preview"
+                        className="mt-2 w-20 h-20 object-cover rounded"
+                      />
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Descripción
+                    </label>
+                    <textarea
+                      value={productForm.description}
+                      onChange={(e) =>
+                        setProductForm((prev) => ({
+                          ...prev,
+                          description: e.target.value,
+                        }))
+                      }
+                      rows={3}
+                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                      placeholder="Describe tu producto..."
+                    />
+                  </div>
+
+                  <div className="flex space-x-2">
+                    <button
+                      type="submit"
+                      className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                    >
+                      {editingProduct
+                        ? "Actualizar Producto"
+                        : "Guardar Producto"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowProductForm(false);
+                        setEditingProduct(null);
+                        setProductForm({
+                          name: "",
+                          description: "",
+                          price: 0,
+                          category: categories[0]?.name || "food",
+                          image: "",
+                        });
+                      }}
+                      className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
                 </div>
               )}
-              
+              {/* 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {products.map((product) => (
-                  <div key={product.productId} className="bg-white border rounded-lg overflow-hidden">
+                  <div
+                    key={product.productId}
+                    className="bg-white border rounded-lg overflow-hidden"
+                  >
                     <img
-                     // src={product.image}
+                      // src={product.image}
                       alt={product.name}
                       className="w-full h-32 object-cover"
                     />
                     <div className="p-4">
                       <h4 className="font-semibold">{product.name}</h4>
-                     
-                      <p className="font-bold text-lg">{formatPrice(product.price)}</p>
-                      <p className="text-xs text-gray-500 mb-2">
-                        Categoría: {categories.find(cat => cat.name === product.category)?.displayName || product.category}
+
+                      <p className="font-bold text-lg">
+                        {formatPrice(product.price)}
                       </p>
-                      
+                      <p className="text-xs text-gray-500 mb-2">
+                        Categoría:{" "}
+                        {categories.find((cat) => cat.name === product.category)
+                          ?.displayName || product.category}
+                      </p>
+
                       <div className="flex space-x-2 mt-3">
                         <button
                           //onClick={() => handleEditProduct(product)}
@@ -327,10 +520,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   </div>
                 ))}
               </div>
+*/}
             </div>
           )}
 
-          {activeTab === 'categories' && (
+          {activeTab === "categories" && (
             <div>
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-lg font-semibold">Categorías</h3>
@@ -346,9 +540,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               {showCategoryForm && (
                 <div className="bg-gray-50 p-6 rounded-lg mb-6">
                   <h4 className="text-lg font-semibold mb-4">
-                    {editingCategory ? 'Editar Categoría' : 'Nueva Categoría'}
+                    {editingCategory ? "Editar Categoría" : "Nueva Categoría"}
                   </h4>
-                  
+
                   <form onSubmit={handleCategorySubmit} className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
@@ -359,13 +553,22 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                           type="text"
                           required
                           value={categoryForm.name}
-                          onChange={(e) => setCategoryForm(prev => ({ ...prev, name: e.target.value.toLowerCase().replace(/\s+/g, '-') }))}
+                          onChange={(e) =>
+                            setCategoryForm((prev) => ({
+                              ...prev,
+                              name: e.target.value
+                                .toLowerCase()
+                                .replace(/\s+/g, "-"),
+                            }))
+                          }
                           className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent"
                           placeholder="Ej: postres"
                         />
-                        <p className="text-xs text-gray-500 mt-1">Se usará internamente para identificar la categoría</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Se usará internamente para identificar la categoría
+                        </p>
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Nombre para Mostrar
@@ -374,27 +577,36 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                           type="text"
                           required
                           value={categoryForm.displayName}
-                          onChange={(e) => setCategoryForm(prev => ({ ...prev, displayName: e.target.value }))}
+                          onChange={(e) =>
+                            setCategoryForm((prev) => ({
+                              ...prev,
+                              displayName: e.target.value,
+                            }))
+                          }
                           className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent"
                           placeholder="Ej: Postres"
                         />
-                        <p className="text-xs text-gray-500 mt-1">Este nombre aparecerá en los botones del menú</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Este nombre aparecerá en los botones del menú
+                        </p>
                       </div>
                     </div>
-                    
+
                     <div className="flex space-x-2">
                       <button
                         type="submit"
                         className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
                       >
-                        {editingCategory ? 'Actualizar Categoría' : 'Guardar Categoría'}
+                        {editingCategory
+                          ? "Actualizar Categoría"
+                          : "Guardar Categoría"}
                       </button>
                       <button
                         type="button"
                         onClick={() => {
                           setShowCategoryForm(false);
                           setEditingCategory(null);
-                          setCategoryForm({ name: '', displayName: '' });
+                          setCategoryForm({ name: "", displayName: "" });
                         }}
                         className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
                       >
@@ -407,13 +619,24 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {categories.map((category) => (
-                  <div key={category.id} className="bg-white border rounded-lg p-4">
-                    <h4 className="font-semibold text-lg">{category.displayName}</h4>
-                    <p className="text-sm text-gray-600 mb-2">ID: {category.name}</p>
-                    <p className="text-xs text-gray-500 mb-4">
-                      Productos: {products.filter(p => p.category === category.name).length}
+                  <div
+                    key={category.id}
+                    className="bg-white border rounded-lg p-4"
+                  >
+                    <h4 className="font-semibold text-lg">
+                      {category.displayName}
+                    </h4>
+                    <p className="text-sm text-gray-600 mb-2">
+                      ID: {category.name}
                     </p>
-                    
+                    <p className="text-xs text-gray-500 mb-4">
+                      Productos:{" "}
+                      {
+                        products.filter((p) => p.category === category.name)
+                          .length
+                      }
+                    </p>
+
                     <div className="flex space-x-2">
                       <button
                         onClick={() => handleEditCategory(category)}
@@ -424,7 +647,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       </button>
                       <button
                         onClick={() => {
-                          if (confirm(`¿Estás seguro de eliminar la categoría "${category.displayName}"? Esto también eliminará todos los productos de esta categoría.`)) {
+                          if (
+                            confirm(
+                              `¿Estás seguro de eliminar la categoría "${category.displayName}"? Esto también eliminará todos los productos de esta categoría.`
+                            )
+                          ) {
                             onDeleteCategory(category.id);
                           }
                         }}
@@ -439,11 +666,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               </div>
             </div>
           )}
-          
-          {activeTab === 'config' && (
+
+          {activeTab === "config" && (
             <div>
-              <h3 className="text-lg font-semibold mb-6">Configuración del Restaurante</h3>
-              
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-semibold">
+                  Configuración del Restaurante
+                </h3>
+                <button
+                  onClick={handleDeleteConfig}
+                  className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                >
+                  Eliminar configuración
+                </button>
+              </div>
+
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -451,12 +688,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   </label>
                   <input
                     type="text"
-                    value={config.name}
-                    onChange={(e) => onUpdateConfig({ ...config, name: e.target.value })}
+                    value={nameCompany}
+                    onChange={(e) => setNameCompany(e.target.value)}
                     className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Logo del Restaurante
@@ -464,15 +701,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={(e) => handleImageUpload(e, 'logo')}
+                    onChange={handleLogoChange}
                     className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent"
                   />
                   <p className="text-xs text-gray-500 mt-1">Peso máximo 10MB</p>
-                  {config.logo && (
-                    <img src={config.logo} alt="Logo preview" className="mt-2 w-16 h-16 object-contain border rounded" />
+                  {config.logoUrl && (
+                    <img
+                      src={config.logoUrl}
+                      alt="Logo preview"
+                      className="mt-2 w-16 h-16 object-contain border rounded"
+                    />
                   )}
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-3">
                     Color Principal del Tema
@@ -481,45 +722,106 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     {colorOptions.map((color) => (
                       <button
                         key={color}
-                        onClick={() => onUpdateConfig({ ...config, primaryColor: color })}
+                        onClick={() =>
+                          onUpdateConfig({ ...config, primaryColor: color })
+                        }
                         className={`w-8 h-8 rounded-full border-2 ${
-                          config.primaryColor === color ? 'border-gray-800' : 'border-gray-300'
+                          config.primaryColor === color
+                            ? "border-gray-800"
+                            : "border-gray-300"
                         }`}
                         style={{ backgroundColor: color }}
                       />
                     ))}
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">Color actual: {config.primaryColor}</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Color actual: {config.primaryColor}
+                  </p>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Número de WhatsApp (opcional)
                   </label>
                   <input
-                    type="text"
-                    value={config.whatsappNumber}
-                    onChange={(e) => onUpdateConfig({ ...config, whatsappNumber: e.target.value })}
+                    type="tel"
+                    value={numberWhatsapp}
+                    onChange={(e) => setNumberWhatsapp(e.target.value)}
                     className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent"
                     placeholder="Ej: +573001234567"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Incluye el código de país. Los pedidos se enviarán a este número.</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Incluye el código de país. Los pedidos se enviarán a este
+                    número.
+                  </p>
                 </div>
-                
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Valor base
+                  </label>
+                  <input
+                    type="number"
+                    value={baseValue}
+                    onChange={(e) => setBaseValue(Number(e.target.value))}
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Valor adicional por kilómetro
+                  </label>
+                  <input
+                    type="number"
+                    value={additionalValue}
+                    onChange={(e) => setAdditionalValue(Number(e.target.value))}
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Ubicación
+                  </label>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={getLocation}
+                      className="p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700"
+                    >
+                      <MapPin className="h-5 w-5" />
+                    </button>
+                    <span>{`Latitud: ${latitude}, Longitud: ${longitude}`}</span>
+                  </div>
+                </div>
+
+                <div className="flex space-x-2 mt-4">
+                  <button
+                    onClick={handleSaveConfig}
+                    className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    Guardar Configuración
+                  </button>
+                </div>
+
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h4 className="font-medium mb-2">Vista Previa</h4>
-                  <div 
+                  <div
                     className="flex items-center space-x-3 p-3 rounded text-white"
                     style={{ backgroundColor: config.primaryColor }}
                   >
-                    {config.logo ? (
-                      <img src={config.logo} alt={config.name} className="h-8 w-8 object-contain" />
+                    {config.logoUrl ? (
+                      <img
+                        src={config.logoUrl}
+                        alt={nameCompany}
+                        className="h-8 w-8 object-contain"
+                      />
                     ) : (
                       <div className="h-8 w-8 bg-white bg-opacity-20 rounded flex items-center justify-center">
-                        <span className="text-sm font-bold">{config.name.charAt(0)}</span>
+                        <span className="text-sm font-bold">{nameCompany}</span>
                       </div>
                     )}
-                    <span className="font-bold">{config.name}</span>
+                    <span className="font-bold">{nameCompany}</span>
                   </div>
                 </div>
               </div>

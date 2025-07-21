@@ -1,5 +1,5 @@
 export interface ProductType {
-  productId: number;
+  productId: string;
   arqProductId: string;
   name: string;
   price: number;
@@ -13,4 +13,11 @@ export interface CartItem {
   product: ProductType;
   quantity: number;
   
+}
+
+export interface ProductsResponse{
+  bebidas:ProductType[];
+  comidasRapidas:ProductType[];
+  asados:ProductType[];
+  adiciones:ProductType[];
 }

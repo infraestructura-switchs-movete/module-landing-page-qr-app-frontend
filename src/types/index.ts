@@ -1,3 +1,5 @@
+import { CompanyType } from "./companyType";
+
 export interface Product {
   id: number;
   name: string;
@@ -18,7 +20,7 @@ export interface Category {
   displayName: string;
 }
 
-export interface RestaurantConfig {
+export interface RestaurantConfig extends CompanyType {
   name: string;
   logo: string | null;
   primaryColor: string;
