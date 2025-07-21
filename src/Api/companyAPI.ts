@@ -2,7 +2,7 @@ import axios from 'axios';
 import { CompanyType } from '../types/companyType';
 
 
-const URL = 'https://arqmv-module-back-whatsapp-qr-app-backend.onrender.com/company';
+const URL = 'https://arqmv-module-back-whatsapp-qr-app-backend.onrender.com/api/back-whatsapp-qr-app/company';
 
 export const createCompany = async (data: FormData) => {
   try {
