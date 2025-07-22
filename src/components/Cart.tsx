@@ -68,7 +68,7 @@ export const Cart: React.FC<CartProps> = ({
     }));
 
     try {
-      await fetch("https://module-bot-meta-qr-app-backend-2.onrender.com/order-complete", {
+      await fetch("https://module-bot-meta-qr-app-backend-2.onrender.com/order-complete",{
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
