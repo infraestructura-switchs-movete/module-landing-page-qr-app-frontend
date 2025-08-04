@@ -1,13 +1,18 @@
-import type { ProductsResponse, ProductType } from '../types/productsType';
+import type { ProductsResponse } from '../types/productsType';
+import {BASE_URL_API} from '../constants/index';
+
+const URL: string = `${BASE_URL_API}/product`;
 
 
-export async function getProductsByCompany(): Promise<ProductsResponse> {  // Cambié 'Product[]' por 'ProductType[]'
-  const response = await fetch('https://arqmv-module-back-whatsapp-qr-app-backend.onrender.com/api/back-whatsapp-qr-app/product/getProductByCompany/238'); // Agregué 'http://'
+export async function getProductsByCompany(): Promise<ProductsResponse> {  
+  const response = await fetch(`${URL}/getProductByCompany/238`); 
 
   if (!response.ok) {
     throw new Error('Error fetching products');
   }
 
-  const data: ProductsResponse = await response.json();  // Cambié 'Productype[]' por 'ProductType[]'
+  const data: ProductsResponse = await response.json();  
   return data;
 }
+
+

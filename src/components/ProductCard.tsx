@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { Plus } from "lucide-react";
 import { ProductType } from "../types/productsType";
 
@@ -13,8 +13,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onAddToCart,
   primaryColor,
 }) => {
-  const [showNotification, setShowNotification] = useState(false);
-
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("es-CO", {
       style: "currency",
@@ -25,12 +23,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   const handleAddToCart = () => {
     onAddToCart(product);
-    setShowNotification(true);
-    setTimeout(() => setShowNotification(false), 2000); // Oculta la notificación después de 2 segundos
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow flex flex-col h-full">
+    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow flex flex-col h-full relative">
       <div className="aspect-w-16 aspect-h-9">
         <img
           src={product.image}
@@ -39,15 +35,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         />
       </div>
 
-  <div className="p-4 flex flex-col flex-grow justify-between">
-    <h3 className="font-semibold text-lg text-gray-900 mb-2">
-      {product.name}
-    </h3>
+      <div className="p-4 flex flex-col flex-grow justify-between">
+        <h3 className="font-semibold text-lg text-gray-900 mb-2">
+          {product.name}
+        </h3>
 
-    <div className="flex flex-col justify-between sm:flex-row items-start sm:items-center mt-auto">
-      <span className="text-xl font-bold text-gray-900 mb-2 sm:mb-0">
-        {formatPrice(product.price)}
-      </span>
+        <div className="flex flex-col justify-between sm:flex-row items-start sm:items-center mt-auto">
+          <span className="text-xl font-bold text-gray-900 mb-2 sm:mb-0">
+            {formatPrice(product.price)}
+          </span>
 
           <button
             onClick={handleAddToCart}
@@ -59,13 +55,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </button>
         </div>
       </div>
-
-        {/* Notificación */}
-      {showNotification && (
-        <div className="absolute top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg animate-fade-in-out">
-          ¡Producto agregado!
-        </div>
-      )}
     </div>
   );
 };

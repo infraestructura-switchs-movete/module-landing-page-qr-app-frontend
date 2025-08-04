@@ -9,6 +9,7 @@ interface HeaderProps {
   onAdminToggle: () => void;
   isCartOpen: boolean;
   isAdminOpen: boolean;
+  style?: React.CSSProperties;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -19,7 +20,6 @@ export const Header: React.FC<HeaderProps> = ({
   isCartOpen,
   isAdminOpen,
 }) => {
-  console.log("Config in Header:", config);
   return (
     <header
       className="sticky top-0 z-50 text-white shadow-lg"
@@ -28,19 +28,15 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-4">
-            {config.logoUrl ? (
               <img
-                src={config.logoUrl}
+                src={"http://res.cloudinary.com/dfotyo6jc/image/upload/v1753906073/pwmtfvje1xgsydx9zxfi.jpg"}
                 alt={config.nameCompany}
                 className="h-8 w-8 object-contain"
               />
-            ) : (
-              <div className="h-8 w-8 bg-white bg-opacity-20 rounded flex items-center justify-center">
-                <span className="text-sm font-bold"></span>
-              </div>
-            )}
             <h1 className="text-xl font-bold">{config.nameCompany}</h1>
           </div>
+
+          {/* 
 
           <nav className="hidden md:flex items-center space-x-8 flex-1 ml-12">
             <a href="#" className="hover:text-gray-300 transition-colors">
@@ -53,6 +49,7 @@ export const Header: React.FC<HeaderProps> = ({
               CONTÁCTANOS
             </a>
           </nav>
+          */}
 
           <div className="flex items-center space-x-4">
             <button
@@ -66,7 +63,7 @@ export const Header: React.FC<HeaderProps> = ({
                 </span>
               )}
             </button>
-
+ {/* 
             <button
               onClick={onAdminToggle}
               className={`p-2 rounded-lg transition-colors ${
@@ -77,6 +74,8 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <Settings className="h-5 w-5" />
             </button>
+            */}
+
           </div>
         </div>
       </div>

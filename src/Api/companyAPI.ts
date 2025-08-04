@@ -1,8 +1,7 @@
 import axios from 'axios';
-import { CompanyType } from '../types/companyType';
+import {BASE_URL_API} from '../constants/index';
 
-
-const URL = 'https://arqmv-module-back-whatsapp-qr-app-backend.onrender.com/api/back-whatsapp-qr-app/company';
+const URL: string = `${BASE_URL_API}/company`;
 
 export const createCompany = async (data: FormData) => {
   try {
@@ -32,7 +31,7 @@ export const getCompany = async () => {
 export const deleteCompany = async (companyId: number) => {
   try {
     const response = await axios.delete(`${URL}/delete/${companyId}`);
-    if (response.status === 200) { // Verifica que la respuesta sea exitosa
+    if (response.status === 200) { 
       return true;
     }
     return false;

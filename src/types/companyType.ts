@@ -8,5 +8,6 @@ export interface CompanyType {
   latitude: string;
   baseValue: number;
   additionalValue: number;
-  
+
+
 }

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { X, Plus, Edit, Trash2, Upload, MapPin } from "lucide-react";
+import { X, Plus, Edit, Trash2, MapPin } from "lucide-react";
 import { Product, Category } from "../types";
 import { createCompany, deleteCompany, getCompany } from "../Api/companyAPI";
 import { CompanyType } from "../types/companyType";
 import { ProductType } from "../types/productsType";
+
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -90,20 +91,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         try {
           await deleteCompany(configData.companyId);
           alert("Configuración eliminada correctamente.");
-
-         
-          onUpdateConfig({
-            companyId: 0,
-            nameCompany: "",
-            logoUrl: null,
-            primaryColor: "#475569",
-            numberWhatsapp: 0,
-            longitude: "",
-            latitude: "",
-            baseValue: 100,
-            additionalValue: 50,
-          });
-
          
           setConfigData(null);
           setNameCompany(""); 

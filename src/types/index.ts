@@ -20,9 +20,3 @@ export interface Category {
   displayName: string;
 }
 
-export interface RestaurantConfig extends CompanyType {
-  name: string;
-  logo: string | null;
-  primaryColor: string;
-  whatsappNumber: string;
-}

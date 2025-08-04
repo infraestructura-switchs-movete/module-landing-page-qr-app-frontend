@@ -1,49 +1,31 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "./components/Header";
 import { ProductCard } from "./components/ProductCard";
 import { Cart } from "./components/Cart";
-//import { OrderSummary } from "./components/OrderSummary";
 import { AdminPanel } from "./components/AdminPanel";
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import {  Category } from "./types";
 import { getProductsByCompany } from "./Api/productsApi";
 import { ProductType, CartItem, ProductsResponse } from "./types/productsType";
-import { CompanyType } from "./types/companyType";
-import { useCompany } from "./hooks/useCompany";
+import { CompanyTypeLocal } from "./hooks/useLocalStorage";
+import {useCompanyLocal} from "./hooks/useCompanyLocal";
+import { Alert } from "@mui/material";
 
 function App() {
-  const [allProducts, setAllProducts] = useState<ProductsResponse>(); // Mantén ProductType[] en el estado
-  const [products, setProducts] = useState<ProductType[]>([]); // Mantén ProductType[] en el estado
+  const [allProducts, setAllProducts] = useState<ProductsResponse>();
+  const [products, setProducts] = useState<ProductType[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [showNotification, setShowNotification] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>("all");
-  const [cartItems, setCartItems] = useLocalStorage<CartItem[]>(
-    "restaurant-cart",
-    []
-  );
-const { company } = useCompany();
-const [config, setConfig] = useLocalStorage<CompanyType>(
+  const [cartItems, setCartItems] = useLocalStorage<CartItem[]>("restaurant-cart", []);
+  const { company } = useCompanyLocal();
+ const [config, setConfig] = useLocalStorage<CompanyTypeLocal>(
   "restaurant-config",
   {
-    companyId: 1,
-    nameCompany: "GMA",
-    logoUrl: null,
-    primaryColor: "#475569",
-    numberWhatsapp: 123456789,
-    longitude: "",
-    latitude: "",
-    baseValue: 100,
-    additionalValue: 50,
+    nameCompany: "Chuzo de ivan",
+    primaryColor: "#db3434ff",
   }
 );
-
-useEffect(() => {
-  if (company) {
-    setConfig({
-      ...company,
-      primaryColor: "#475569"
-    });
-  }
-}, []);
 
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
@@ -53,22 +35,34 @@ useEffect(() => {
     0
   );
 
-  const addToCart = (product: ProductType) => {
-    setCartItems((prev) => {
-      const existingItem = prev.find(
-        (item) => item.product.productId === product.productId
-      );
-      if (existingItem) {
-        return prev.map((item) =>
-          item.product.productId === product.productId
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        );
-      } else {
-        return [...prev, { product, quantity: 1 }];
-      }
+ useEffect(() => {
+  if (company) {
+    setConfig({
+      ...company,
+      primaryColor: "#e40c0cff"
     });
-  };
+  }
+}, []);
+
+  const addToCart = (product: ProductType) => {
+  setCartItems((prev) => {
+    const existingItem = prev.find(
+      (item) => item.product.productId === product.productId
+    );
+    if (existingItem) {
+      return prev.map((item) =>
+        item.product.productId === product.productId
+          ? { ...item, quantity: item.quantity + 1 }
+          : item
+      );
+    } else {
+      return [...prev, { product, quantity: 1 }];
+    }
+  });
+  setShowNotification(true);
+  setTimeout(() => setShowNotification(false), 1000);
+};
+
 
   const updateQuantity = (productId: string, quantity: number) => {
     if (quantity <= 0) {
@@ -227,6 +221,7 @@ useEffect(() => {
         onAdminToggle={() => setIsAdminOpen(!isAdminOpen)}
         isCartOpen={isCartOpen}
         isAdminOpen={isAdminOpen}
+        style={{ backgroundColor: config.primaryColor }}
       />
       <Cart
         isOpen={isCartOpen}
@@ -238,6 +233,25 @@ useEffect(() => {
         //config={config}
         onRemoveItem={removeFromCart}
       />
+      {showNotification && (
+        <div className="fixed top-4 right-4 w-full max-w-xs z-50">
+          <Alert
+            severity="success"
+            className="!text-xs !py-2 !px-3 flex justify-between items-center"
+            action={
+            <button
+            onClick={() => setShowNotification(false)}
+            className="text-gray-500 hover:text-gray-700 flex items-center justify-center w-6 h-6 rounded-full"
+          >
+            X
+         </button>
+        }
+      >
+        ¡Producto agregado al carrito!
+      </Alert>
+    </div>
+   )}
+
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Contenedor sticky para las categorías */}
         <div className="sticky top-16 z-40 bg-white py-2 mb-6">
