@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 
 interface CompanyType {
   companyId: number;
-  nameCompany: string;
+  productNameCompany: string;
   logoUrl: string | null;
   numberWhatsapp: number;
   longitude: string;

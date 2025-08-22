@@ -1,60 +1,79 @@
-import React from "react";
+import React, { useState } from "react";
 import { Plus } from "lucide-react";
 import { ProductType } from "../types/productsType";
+import ProductModal from "./ProductModal";
 
 interface ProductCardProps {
   product: ProductType;
-  onAddToCart: (product: ProductType) => void;
+  onAddToCart: (product: ProductType, quantity: number, comment: string) => void;
   primaryColor: string;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({
   product,
   onAddToCart,
-  primaryColor,
 }) => {
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("es-CO", {
-      style: "currency",
-      currency: "COP",
-      minimumFractionDigits: 0,
-    }).format(price);
-  };
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleAddToCart = () => {
-    onAddToCart(product);
-  };
+  const handleOpenModal = () => setIsModalOpen(true);
+  const handleCloseModal = () => setIsModalOpen(false);
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow flex flex-col h-full relative">
-      <div className="aspect-w-16 aspect-h-9">
-        <img
-          src={product.image}
-          alt={product.name}
-          className="w-full h-48 object-cover"
-        />
-      </div>
+    <div className="flex items-center bg-white rounded-2xl shadow-md hover:shadow-lg transition-all border border-gray-100 p-3 sm:p-4 min-h-[120px]">
+      <img
+        src={product.image}
+        alt={product.productName}
+        className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-xl flex-shrink-0"
+        loading="lazy"
+      />
 
-      <div className="p-4 flex flex-col flex-grow justify-between">
-        <h3 className="font-semibold text-lg text-gray-900 mb-2">
-          {product.name}
-        </h3>
-
-        <div className="flex flex-col justify-between sm:flex-row items-start sm:items-center mt-auto">
-          <span className="text-xl font-bold text-gray-900 mb-2 sm:mb-0">
-            {formatPrice(product.price)}
-          </span>
+      <div className="flex flex-col flex-1 ml-3 sm:ml-4 min-w-0">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="font-bold text-sm sm:text-base text-gray-800 truncate">
+              {product.productName}
+            </h3>
+            <span className="text-base sm:text-lg font-bold text-black">
+              {new Intl.NumberFormat("es-CO", {
+                style: "currency",
+                currency: "COP",
+                minimumFractionDigits: 0,
+              }).format(product.price)}
+            </span>
+          </div>
 
           <button
-            onClick={handleAddToCart}
-            className="text-white px-4 py-2 rounded-lg hover:opacity-90 transition-colors flex items-center space-x-2"
-            style={{ backgroundColor: primaryColor }}
+            onClick={handleOpenModal}
+            className="ml-2 flex items-center justify-center rounded-full border-2 border-[#db3434] text-[#db3434] hover:bg-[#ffe5d0] transition-colors w-10 h-10 sm:w-9 sm:h-9"
+            aria-label="Agregar"
+            title="Agregar"
           >
-            <Plus className="h-4 w-4" />
-            <span>Agregar</span>
+            <Plus className="h-5 w-5" />
           </button>
         </div>
+
+        <p
+          className="text-gray-500 text-xs sm:text-sm mt-1"
+          style={{
+            display: "-webkit-box",
+            WebkitLineClamp: 2,         // 2 líneas en móvil/desktop sin plugin
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+          }}
+          title={product.description || ""}
+        >
+          {product.description ||
+            "300g de carne Angus, lechuga, tomate, cebolla, salsa de la casa y tocineta. Acompañado de papas a la francesa."}
+        </p>
       </div>
+
+      {isModalOpen && (
+        <ProductModal
+          product={product}
+          onClose={handleCloseModal}
+          onAddToCart={onAddToCart}
+        />
+      )}
     </div>
   );
 };

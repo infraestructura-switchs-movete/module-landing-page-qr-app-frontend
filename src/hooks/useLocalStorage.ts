@@ -26,7 +26,7 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
 
 
 export interface CompanyTypeLocal {
-  nameCompany: string;
+  productNameCompany: string;
   primaryColor: string;
   
 }

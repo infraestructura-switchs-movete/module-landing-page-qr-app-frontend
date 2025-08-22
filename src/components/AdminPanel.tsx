@@ -35,7 +35,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   config,
   onUpdateConfig,
 }) => {
-  const [nameCompany, setNameCompany] = useState("");
+  const [productNameCompany, setproductNameCompany] = useState("");
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [numberWhatsapp, setNumberWhatsapp] = useState("");
   const [longitude, setLongitude] = useState("");
@@ -52,15 +52,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [configData, setConfigData] = useState<CompanyType | null>(null);
   const [productForm, setProductForm] = useState({
-    name: "",
+    productName: "",
     description: "",
     price: 0,
-    category: categories[0]?.name || "food",
+    category: categories[0]?.productName || "food",
     image: "",
   });
   const [categoryForm, setCategoryForm] = useState({
-    name: "",
-    displayName: "",
+    productName: "",
+    displayproductName: "",
   });
 
   useEffect(() => {
@@ -68,7 +68,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       const company = await getCompany();
       if (company) {
         setConfigData(company);
-        setNameCompany(company.nameCompany);
+        setproductNameCompany(company.productNameCompany);
         setNumberWhatsapp(company.numberWhatsapp);
         setLongitude(company.longitude);
         setLatitude(company.latitude);
@@ -93,7 +93,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           alert("Configuración eliminada correctamente.");
          
           setConfigData(null);
-          setNameCompany(""); 
+          setproductNameCompany(""); 
           setNumberWhatsapp(""); 
           setLongitude(""); 
           setLatitude(""); 
@@ -150,7 +150,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       return;
     }
 
-    formData.append("nameCompany", nameCompany);
+    formData.append("productNameCompany", productNameCompany);
     formData.append("numberWhatsapp", whatsappNumber);
     formData.append("longitude", longitude);
     formData.append("latitude", latitude);
@@ -193,7 +193,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       } else {
         onAddProduct(productForm);
       }
-      setProductForm({ name: '', description: '', price: 0, category: categories[0]?.name || 'food', image: '' });
+      setProductForm({ productName: '', description: '', price: 0, category: categories[0]?.productName || 'food', image: '' });
       setShowProductForm(false);
     };*/
 
@@ -205,14 +205,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     } else {
       onAddCategory(categoryForm);
     }
-    setCategoryForm({ name: "", displayName: "" });
+    setCategoryForm({ productName: "", displayproductName: "" });
     setShowCategoryForm(false);
   };
 
   const handleEditProduct = (product: Product) => {
     setEditingProduct(product);
     setProductForm({
-      name: product.name,
+      productName: product.productName,
       description: product.description,
       price: product.price,
       category: product.category,
@@ -224,8 +224,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const handleEditCategory = (category: Category) => {
     setEditingCategory(category);
     setCategoryForm({
-      name: category.name,
-      displayName: category.displayName,
+      productName: category.productName,
+      displayproductName: category.displayproductName,
     });
     setShowCategoryForm(true);
   };
@@ -344,11 +344,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       <input
                         type="text"
                         required
-                        value={productForm.name}
+                        value={productForm.productName}
                         onChange={(e) =>
                           setProductForm((prev) => ({
                             ...prev,
-                            name: e.target.value,
+                            productName: e.target.value,
                           }))
                         }
                         className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent"
@@ -390,8 +390,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent"
                     >
                       {categories.map((category) => (
-                        <option key={category.id} value={category.name}>
-                          {category.displayName}
+                        <option key={category.id} value={category.productName}>
+                          {category.displayproductName}
                         </option>
                       ))}
                     </select>
@@ -449,10 +449,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         setShowProductForm(false);
                         setEditingProduct(null);
                         setProductForm({
-                          name: "",
+                          productName: "",
                           description: "",
                           price: 0,
-                          category: categories[0]?.name || "food",
+                          category: categories[0]?.productName || "food",
                           image: "",
                         });
                       }}
@@ -467,24 +467,24 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {products.map((product) => (
                   <div
-                    key={product.productId}
+                    key={product.id}
                     className="bg-white border rounded-lg overflow-hidden"
                   >
                     <img
                       // src={product.image}
-                      alt={product.name}
+                      alt={product.productName}
                       className="w-full h-32 object-cover"
                     />
                     <div className="p-4">
-                      <h4 className="font-semibold">{product.name}</h4>
+                      <h4 className="font-semibold">{product.productName}</h4>
 
                       <p className="font-bold text-lg">
                         {formatPrice(product.price)}
                       </p>
                       <p className="text-xs text-gray-500 mb-2">
                         Categoría:{" "}
-                        {categories.find((cat) => cat.name === product.category)
-                          ?.displayName || product.category}
+                        {categories.find((cat) => cat.productName === product.category)
+                          ?.displayproductName || product.category}
                       </p>
 
                       <div className="flex space-x-2 mt-3">
@@ -496,7 +496,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                           <span>Editar</span>
                         </button>
                         <button
-                          //onClick={() => onDeleteProduct(product.productId)}
+                          //onClick={() => onDeleteProduct(product.id)}
                           className="flex-1 bg-red-600 text-white py-1 px-2 rounded text-sm hover:bg-red-700 transition-colors flex items-center justify-center space-x-1"
                         >
                           <Trash2 className="h-3 w-3" />
@@ -539,11 +539,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         <input
                           type="text"
                           required
-                          value={categoryForm.name}
+                          value={categoryForm.productName}
                           onChange={(e) =>
                             setCategoryForm((prev) => ({
                               ...prev,
-                              name: e.target.value
+                              productName: e.target.value
                                 .toLowerCase()
                                 .replace(/\s+/g, "-"),
                             }))
@@ -552,7 +552,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                           placeholder="Ej: postres"
                         />
                         <p className="text-xs text-gray-500 mt-1">
-                          Se usará internamente para identificar la categoría
+                          Se usará interproductNamente para identificar la categoría
                         </p>
                       </div>
 
@@ -563,11 +563,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         <input
                           type="text"
                           required
-                          value={categoryForm.displayName}
+                          value={categoryForm.displayproductName}
                           onChange={(e) =>
                             setCategoryForm((prev) => ({
                               ...prev,
-                              displayName: e.target.value,
+                              displayproductName: e.target.value,
                             }))
                           }
                           className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent"
@@ -593,7 +593,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         onClick={() => {
                           setShowCategoryForm(false);
                           setEditingCategory(null);
-                          setCategoryForm({ name: "", displayName: "" });
+                          setCategoryForm({ productName: "", displayproductName: "" });
                         }}
                         className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
                       >
@@ -611,15 +611,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     className="bg-white border rounded-lg p-4"
                   >
                     <h4 className="font-semibold text-lg">
-                      {category.displayName}
+                      {category.displayproductName}
                     </h4>
                     <p className="text-sm text-gray-600 mb-2">
-                      ID: {category.name}
+                      ID: {category.productName}
                     </p>
                     <p className="text-xs text-gray-500 mb-4">
                       Productos:{" "}
                       {
-                        products.filter((p) => p.category === category.name)
+                        products.filter((p) => p.category === category.productName)
                           .length
                       }
                     </p>
@@ -636,7 +636,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         onClick={() => {
                           if (
                             confirm(
-                              `¿Estás seguro de eliminar la categoría "${category.displayName}"? Esto también eliminará todos los productos de esta categoría.`
+                              `¿Estás seguro de eliminar la categoría "${category.displayproductName}"? Esto también eliminará todos los productos de esta categoría.`
                             )
                           ) {
                             onDeleteCategory(category.id);
@@ -675,8 +675,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   </label>
                   <input
                     type="text"
-                    value={nameCompany}
-                    onChange={(e) => setNameCompany(e.target.value)}
+                    value={productNameCompany}
+                    onChange={(e) => setproductNameCompany(e.target.value)}
                     className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent"
                   />
                 </div>
@@ -800,15 +800,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     {config.logoUrl ? (
                       <img
                         src={config.logoUrl}
-                        alt={nameCompany}
+                        alt={productNameCompany}
                         className="h-8 w-8 object-contain"
                       />
                     ) : (
                       <div className="h-8 w-8 bg-white bg-opacity-20 rounded flex items-center justify-center">
-                        <span className="text-sm font-bold">{nameCompany}</span>
+                        <span className="text-sm font-bold">{productNameCompany}</span>
                       </div>
                     )}
-                    <span className="font-bold">{nameCompany}</span>
+                    <span className="font-bold">{productNameCompany}</span>
                   </div>
                 </div>
               </div>

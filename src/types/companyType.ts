@@ -1,6 +1,6 @@
 export interface CompanyType {
   companyId: number;
-  nameCompany: string;
+  productNameCompany: string;
   logoUrl: string | null;
   primaryColor: string;
   numberWhatsapp: number;

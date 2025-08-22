@@ -4,8 +4,8 @@ import { CartItem } from '../types';
 
 interface OrderSummaryProps {
   items: CartItem[];
-  onUpdateQuantity: (productId: number, quantity: number) => void;
-  onRemoveItem: (productId: number) => void;
+  onUpdateQuantity: (id: number, quantity: number) => void;
+  onRemoveItem: (id: number) => void;
   primaryColor: string;
 }
 
@@ -72,11 +72,11 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
                   <div className="flex items-center space-x-3">
                     <img
                       src={item.product.image}
-                      alt={item.product.name}
+                      alt={item.product.productName}
                       className="w-12 h-12 object-cover rounded"
                     />
                     <div>
-                      <p className="font-medium text-gray-900">{item.product.name}</p>
+                      <p className="font-medium text-gray-900">{item.product.productName}</p>
                       <p className="text-sm text-gray-500 truncate max-w-xs">
                         {item.product.description}
                       </p>
